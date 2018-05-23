@@ -2,12 +2,16 @@
 #ifdef __AVR__
 #include <avr/power.h>
 #endif
-
+#define NUMLEDS 70
 #define PIN 6
+int sensorValue = 0;         
+int sensorMin = 1023;        
+int sensorMax = 0; 
 
 const int buttonPin = 2;
 const int ledPin =  13;
-Adafruit_NeoPixel strip = Adafruit_NeoPixel(60, PIN, NEO_GRB + NEO_KHZ800);
+const int threshold = 700;
+Adafruit_NeoPixel strip = Adafruit_NeoPixel(NUMLEDS, PIN, NEO_GRB + NEO_KHZ800);
 void setup() {
   pinMode(ledPin, OUTPUT);
   pinMode(buttonPin, INPUT_PULLUP);
@@ -17,18 +21,18 @@ void setup() {
 }
 
 void loop() {
-
+\\\
   if (!digitalRead(buttonPin)) {
     digitalWrite(ledPin, HIGH);
     Serial.println(analogRead(0));
-    if (analogRead(0) > 500) {
+    if (analogRead(0) > sensorValue) {
       Serial.println("maaahahhhhhh");
-      meteorRain(100, 0, 0, 10, 64, true, 20);
+      meteorRain(50, 255, 0, 10, 64, true, 20);
     }
   } else {
     // turn LED off:
     digitalWrite(ledPin, LOW);
-    colorWipe(strip.Color(0, 0, 0, 0), 0); // White RGBW
+
   }
 }
 void colorWipe(uint32_t c, uint8_t wait) {
@@ -39,6 +43,19 @@ void colorWipe(uint32_t c, uint8_t wait) {
   }
 }
 
+void TwinkleRandom(int Count, int SpeedDelay, boolean OnlyOne) {
+  // Vertical Patern
+  setAll(0, 0, 0);
+  for (int i = 0; i < Count; i++) {
+    setPixel(random(NUMLEDS), random(0, 255), random(0, 255), random(0, 255));
+    strip.show();
+    delay(SpeedDelay);
+    if (OnlyOne) {
+      setAll(0, 0, 0);
+    }
+  }
+  delay(SpeedDelay);
+}
 uint32_t Wheel(byte WheelPos) {
   WheelPos = 255 - WheelPos;
   if (WheelPos < 85) {
@@ -54,16 +71,16 @@ uint32_t Wheel(byte WheelPos) {
 void meteorRain(byte red, byte green, byte blue, byte meteorSize, byte meteorTrailDecay, boolean meteorRandomDecay, int SpeedDelay) {
   setAll(0, 0, 0);
 
-  for (int i = 0; i < NUM_LEDS + NUM_LEDS; i++) {
+  for (int i = 0; i < NUMLEDS + NUMLEDS; i++) {
     // fade brightness all LEDs one step
-    for (int j = 0; j < NUM_LEDS; j++) {
+    for (int j = 0; j < NUMLEDS; j++) {
       if ( (!meteorRandomDecay) || (random(10) > 5) ) {
         fadeToBlack(j, meteorTrailDecay );
       }
     }
     // draw meteor
     for (int j = 0; j < meteorSize; j++) {
-      if ( ( i - j < NUM_LEDS) && (i - j >= 0) ) {
+      if ( ( i - j < NUMLEDS) && (i - j >= 0) ) {
         setPixel(i - j, red, green, blue);
       }
     }
@@ -115,8 +132,26 @@ void setPixel(int Pixel, byte red, byte green, byte blue) {
 }
 
 void setAll(byte red, byte green, byte blue) {
-  for (int i = 0; i < NUM_LEDS; i++ ) {
+  for (int i = 0; i < NUMLEDS; i++ ) {
     setPixel(i, red, green, blue);
   }
   showStrip();
 }
+
+void callibrate () {
+  while (millis() < 5000) {
+    sensorValue = analogRead(sensorPin);
+
+    // record the maximum sensor value
+    if (sensorValue > sensorMax) {
+      sensorMax = sensorValue;
+    }
+
+    // record the minimum sensor value
+    if (sensorValue < sensorMin) {
+      sensorMin = sensorValue;
+    }
+  }
+}
+}
+
